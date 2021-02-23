@@ -32,31 +32,31 @@ exports.PRODUCTION_API_BASE_URL = PRODUCTION_API_BASE_URL;
 exports.SANDBOX_API_BASE_URL = SANDBOX_API_BASE_URL;
 
 /**
- * NodeJS QuickBooks connector class. 
- * 
+ * NodeJS QuickBooks connector class.
+ *
  * @version 3.1.x
  */
 class QboConnector extends EventEmitter{
   /**
-   * @param {object} config 
-   * @param {string} config.client_id (required) the Intuit-generated client id for your app 
+   * @param {object} config
+   * @param {string} config.client_id (required) the Intuit-generated client id for your app
    * @param {string} config.client_secret (required) the Intuit-generate client secret for your app
-   * @param {string} config.redirect_uri (required) a valid OAuth2 redirect URI for your app 
+   * @param {string} config.redirect_uri (required) a valid OAuth2 redirect URI for your app
    * @param {string} config.access_token access token obtained via the OAuth2 process
    * @param {string} config.refresh_token  refresh token obtained via the Oauth2 process, used to obtain access tokens automatically when they expire
    * @param {string} config.realm_id company identifer for the QuickBooks instance
-   * @param {string} config.base_url defaults to 'https://quickbooks.api.intuit.com/v3' if not provided. If you are testing with a sandbox 
+   * @param {string} config.base_url defaults to 'https://quickbooks.api.intuit.com/v3' if not provided. If you are testing with a sandbox
    * environment, consult the documentation for the base url to use (e.g. 'https://sandbox-quickbooks.api.intuit.com/v3')
    * @param {number} config.minor_version optional minor version to use on API calls to the QuickBooks API. This will become the default minor version applied to all
-   * API calls. You can override the minor_version on specific calls, by providing it as an options argument on the API call. 
+   * API calls. You can override the minor_version on specific calls, by providing it as an options argument on the API call.
    * See https://developer.intuit.com/app/developer/qbo/docs/develop/explore-the-quickbooks-online-api/minor-versions to learn more about minor versions.
    * @param {function} config.credential_initializer optional (but recommended) function returning an object with the initial credentials to be used, of the form
    * `{ access_token, refresh_token, realm_id}`. This function is invoked on the first API method invocation automatically. If you omit this function, you'll need
-   * to call the setCredentials method prior to your first API method invocation. 
+   * to call the setCredentials method prior to your first API method invocation.
    */
   constructor(config){
     super();
-    
+
     if(!config.client_id || !config.client_secret || !config.redirect_uri){
       throw new CredentialsError(`Invalid configuration. The "client_id", "client_secret", and "redirect_uri" properties are all required.`);
     }
@@ -149,9 +149,9 @@ class QboConnector extends EventEmitter{
    * Sets the credentials on the connector. If any of the creds properties are missing,
    * the corresponding internal property will NOT be set.
    * @param {object} creds
-   * @param {string} creds.access_token the Intuit access token 
+   * @param {string} creds.access_token the Intuit access token
    * @param {string} creds.realm_id the Intuit realm (company id)
-   * @param {string} creds.refresh_token the Intuit refresh token 
+   * @param {string} creds.refresh_token the Intuit refresh token
    */
   setCredentials(creds){
     if(!creds) throw new CredentialsError("No credentials provided.");
@@ -231,6 +231,11 @@ class QboConnector extends EventEmitter{
             if(!qs) qs = {};
             qs.minorversion = self.minor_version;
           }
+          if(opts && opts.include){
+            if(!qs) qs = {};
+            qs.include=opts.include;
+          }
+          console.log(qs)
           return self._get.call(self, e.name, `/${e.fragment}/${id}`, qs);
         }
       }
@@ -267,14 +272,14 @@ class QboConnector extends EventEmitter{
             if(!qs) qs = {};
             qs.minorversion = self.minor_version;
           }
-          
+
           return self._get.call(self, e.name, `/query`, qs);
         }
       }
 
       if(e.report){
         options.query = function(parms, opts){
-          
+
           var qs = parms || {};
           if(opts && opts.reqid){
             qs.requestid=opts.reqid ;
@@ -285,7 +290,7 @@ class QboConnector extends EventEmitter{
             if(!qs) qs = {};
             qs.minorversion = self.minor_version;
           }
-          
+
           return self._get.call(self, e.name, `/reports/${e.fragment}`, qs);
         }
       }
@@ -307,10 +312,10 @@ class QboConnector extends EventEmitter{
   */
   async _get(entityName, uri, qs){
     return this.doFetch(
-      "GET", 
-      `${uri}`, 
-      qs, 
-      null, 
+      "GET",
+      `${uri}`,
+      qs,
+      null,
       {entityName}
     );
   }
@@ -318,10 +323,10 @@ class QboConnector extends EventEmitter{
 
   async _post(entityName, uri, qs, body){
     return this.doFetch(
-      "POST", 
-      `${uri}`, 
-      qs, 
-      body, 
+      "POST",
+      `${uri}`,
+      qs,
+      body,
       {entityName}
     );
   }
@@ -329,17 +334,17 @@ class QboConnector extends EventEmitter{
 
   async _batch(body){
     return this.doFetch(
-      "POST", 
-      `/batch`, 
-      null, 
+      "POST",
+      `/batch`,
+      null,
       body
     );
   }
- 
+
 
   /**
    * Internal method to make an API call using node-fetch.
-   * 
+   *
    * @param {string} method GET|POST|PUT|DELETE
    * @param {string} url api endpoint url (without query parameters)
    * @param {object} query hash of query string parameters to be added to the url
@@ -387,16 +392,16 @@ class QboConnector extends EventEmitter{
     }
 
     if(options && options.headers){
-      fetchOpts.headers = options.headers;
+      Object.assign(fetchOpts.headers, options.headers);
     }
-    
+
     let qstring = '';
     if(query){
       qstring = qs.stringify(query);
       qstring = '?'+qstring;
     }
     let full_url = `${this.base_url}/company/${this.realm_id}${url}${qstring}`;
-    
+
     if(payload){
       if(fetchOpts.headers['Content-Type']==='application/x-www-form-urlencoded'){
         fetchOpts.body = payload
@@ -405,25 +410,25 @@ class QboConnector extends EventEmitter{
         //assume json
         fetchOpts.body = JSON.stringify(payload);
         verbose(`  JSON payload: ${JSON.stringify(payload)}`);
-      
+
       }
     }
 
     try{
       debug(`${method}${options.entityName?' '+options.entityName:''} ${full_url}`);
-      
+
       let response = await fetch(full_url, fetchOpts);
 
       let result = null;
       if(response.ok){
         debug(`  ...OK HTTP-${response.status}`);
-        result = await response.json();
+        result = response.headers["Content-Type"] === "application/json" ?  await response.json() : await response.text();
         verbose(`  response payload: ${JSON.stringify(result)}`);
       } else {
         debug(`  ...Error. HTTP-${response.status}`);
-    
+
         //Note: Some APIs return HTML or text depending on status code...
-        let result = await response.json();
+        let result = await response.text();
         if (response.status >=300 & response.status < 400){
           //redirection
         } else if (response.status >=400 & response.status < 500){
@@ -459,7 +464,7 @@ class QboConnector extends EventEmitter{
           }
           if(!explain) explain = JSON.stringify(result);
           throw new ApiError(`Client Error (HTTP ${response.status}) ${explain}`, result);
-          
+
         } else if (response.status >=500) {
           //server side errors
           verbose(`  server error. response payload: ${JSON.stringify(result)}`);
@@ -475,7 +480,7 @@ class QboConnector extends EventEmitter{
           debug(`Attempting to refresh access token...`);
           //Refresh the access token.
           await this.getAccessToken();
-          
+
           options.retries+=1;
           debug(`...refreshed OK.`);
           //Retry the request
@@ -497,15 +502,15 @@ class QboConnector extends EventEmitter{
    * Calls the Intuit OAuth2 token endpoint for either an authorization_code grant (if the code is provided) or a
    * refresh_token grant. In either case the internal credentials are refreshed, and the "token.refreshed" event is
    * omitted with the credentials returned so they can be stored securely for subsequent use.
-   * 
+   *
    * @param {string} code (optional) authorization code obtained from the user consent part of the OAuth2 flow.
    * If provided, the method assumes an authorization_code grant type is being requested; otherwise the refresh_token
-   * grant type is assumed. 
+   * grant type is assumed.
    * @param {string} realm_id (conditional) required when the code is provided. Identifies the quickbooks company. Internally sets the realm_id on the connector.
    * @returns the access token data payload
    * @throws CredentialsError on invalid grants.
    * @emits `token.refreshed` with the data payload
-   * @example 
+   * @example
    *  {
    *    token_type: "Bearer"
    *    realm_id: string,
@@ -523,7 +528,7 @@ class QboConnector extends EventEmitter{
         'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': USER_AGENT,
         'Authorization': `Basic ${Buffer.from( this.client_id+':'+this.client_secret ).toString('base64')}`,
-      } 
+      }
     };
     verbose(`Headers: ${JSON.stringify(fetchOpts.headers, null, 2)}`);
     let grant_type = 'refresh_token';
@@ -537,7 +542,7 @@ class QboConnector extends EventEmitter{
     }
 
     verbose(`Sending: ${fetchOpts.body}`);
-    let response = await fetch(TOKEN_ENDPOINT, fetchOpts); 
+    let response = await fetch(TOKEN_ENDPOINT, fetchOpts);
     if(!response.ok){
       debug('...unsuccessful.')
       let result = await response.json();
@@ -546,13 +551,13 @@ class QboConnector extends EventEmitter{
 
     let result = await response.json();
     verbose(`Received:\n${JSON.stringify(result)}`);
-  
+
     let credentials = {};
     Object.assign(credentials, result);
 
     if(realm_id){
       // if realm_id is explicitly provided, initialize with existing realm id - usually realm id is not available on a refresh
-      credentials.realm_id=realm_id; 
+      credentials.realm_id=realm_id;
     } else if (this.realm_id){
       // otherwise use internal realm id if available
       credentials.realm_id = this.realm_id;
@@ -565,7 +570,7 @@ class QboConnector extends EventEmitter{
 
     // Reset the internal credentials (this detects changes)
     this.setCredentials(credentials);
-    
+
     //After the internal credentials are refreshed, emit the event.
     this.emit('token.refreshed', credentials);
 
@@ -590,7 +595,7 @@ class QboConnector extends EventEmitter{
           this.setCredentials(creds);
         }
       }
-      if(this.refresh_token){  
+      if(this.refresh_token){
         let payload = {token: this.refresh_token}
         verbose(`Disconnection payload:\n${JSON.stringify(payload)}`);
         let fetchOpts = {
