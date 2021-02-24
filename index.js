@@ -428,7 +428,7 @@ class QboConnector extends EventEmitter{
         debug(`  ...Error. HTTP-${response.status}`);
 
         //Note: Some APIs return HTML or text depending on status code...
-        let result = await response.text();
+        let result = await response.json();
         if (response.status >=300 & response.status < 400){
           //redirection
         } else if (response.status >=400 & response.status < 500){
