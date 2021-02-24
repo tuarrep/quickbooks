@@ -422,7 +422,7 @@ class QboConnector extends EventEmitter{
       let result = null;
       if(response.ok){
         debug(`  ...OK HTTP-${response.status}`);
-        result = response.headers["Content-Type"] === "application/json" ?  await response.json() : await response.text();
+        result = options.asBuffer ?  await response.arrayBuffer() : await response.json();
         verbose(`  response payload: ${JSON.stringify(result)}`);
       } else {
         debug(`  ...Error. HTTP-${response.status}`);
